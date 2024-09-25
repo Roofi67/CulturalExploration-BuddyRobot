@@ -54,6 +54,8 @@ public class MainActivity extends BuddyActivity {
     private static final String SUBSCRIPTION_KEY = "522c4a2067f34864aaa6a35388cc4e1c";
     private static final String SERVICE_REGION = "westeurope";
     private static final int PERMISSIONS_REQUEST_CODE = 1;
+    private ImageView fullScreenImage;
+
 
     private Handler uiHandler = new Handler(Looper.getMainLooper());
 
@@ -90,6 +92,8 @@ public class MainActivity extends BuddyActivity {
     private void initViews() {
         mainButtonsContainer = findViewById(R.id.mainButtonsContainer);
        // buttonBrowse = findViewById(R.id.button_browse);
+        fullScreenImage = findViewById(R.id.welcomeImage);
+
         Button buttonListen = findViewById(R.id.button_listen);
         listViewFiles = findViewById(R.id.listView_files);
         recognizedText = findViewById(R.id.recognizedText);
@@ -99,6 +103,7 @@ public class MainActivity extends BuddyActivity {
 
         buttonListen.setOnClickListener(v -> {
             mainButtonsContainer.setVisibility(View.GONE);
+            fullScreenImage.setVisibility(View.GONE);
             startContinuousRecognition();
         });
 
@@ -107,6 +112,8 @@ public class MainActivity extends BuddyActivity {
                 stopListening();
             }
             showMainButtons();
+            fullScreenImage.setVisibility(View.VISIBLE);
+
         });
     }
 
@@ -247,12 +254,13 @@ public class MainActivity extends BuddyActivity {
             if (e.getResult().getReason() == ResultReason.RecognizedSpeech) {
                 Log.i(TAG, "Recognized: " + e.getResult().getText());
 
-                // Update currentLanguage based on detected language
                 AutoDetectSourceLanguageResult languageResult = AutoDetectSourceLanguageResult.fromResult(e.getResult());
-                currentLanguage = languageResult.getLanguage();
-                Log.i(TAG, "Detected language: " + currentLanguage);
+                String detectedLanguage = languageResult.getLanguage();
+                Log.i(TAG, "Detected language: " + detectedLanguage);
 
+                // Update currentLanguage
                 runOnUiThread(() -> {
+                    currentLanguage = detectedLanguage;
                     recognizedText.setText("Recognized: " + e.getResult().getText());
                     handleSpeechInteraction(e.getResult().getText().toLowerCase());
                 });
@@ -360,11 +368,13 @@ public class MainActivity extends BuddyActivity {
 
     private void askWhatAreTheyPlaying() {
         sayText("Hello! What are you playing?", currentVoiceSetting());
+        setMoodTemporarily(FacialExpression.HAPPY);
         waitingForGameResponse = true; // Set the flag to true to wait for the response
     }
 
     private void askToJoinPlay() {
         sayText("Can I play with you?", currentVoiceSetting());
+        setMoodTemporarily(FacialExpression.HAPPY);
     }
 
     private void sayOk() {
@@ -383,7 +393,7 @@ public class MainActivity extends BuddyActivity {
     }
 
     private void handleSpeechInteractionEN(String speechText) {
-        if (speechText.contains("do you want some") || speechText.contains("would you like")) {
+        if (speechText.contains("want") || speechText.contains("would you like")) {
             if (speechText.contains("drink")) {
                 handleDrinkOfferEN(extractDrinkType(speechText));
             } else if (speechText.contains("food")) {
@@ -414,6 +424,7 @@ public class MainActivity extends BuddyActivity {
 
     private void handleDrinkOfferEN(String drinkType) {
         sayText("Thank you! I would love some " + drinkType + ".","en-US-JennyNeural");
+        setMoodTemporarily(FacialExpression.HAPPY);
         delayedResponse(() -> playSound(R.raw.drinking_sound, () -> {
             showDrinkOnScreen(drinkType);
             suggestCulturalDrinksEN();
@@ -422,11 +433,13 @@ public class MainActivity extends BuddyActivity {
 
     private void handleFoodOfferEN(String foodType) {
         sayText("Thank you! I would love some " + foodType + ".","en-US-JennyNeural");
+        setMoodTemporarily(FacialExpression.HAPPY);
         delayedResponse(() -> playSound(R.raw.eating_sound, this::talkAboutCulturalFoodsEN));
     }
 
     private void handleDrinkOfferFR(String drinkType) {
         sayText("Merci! J'aimerais beaucoup " + drinkType + ".", "it-IT-IsabellaMultilingualNeural");
+        setMoodTemporarily(FacialExpression.HAPPY);
         delayedResponse(() -> playSound(R.raw.drinking_sound, () -> {
             showDrinkOnScreen(drinkType);
             suggestCulturalDrinksFR();
@@ -435,11 +448,13 @@ public class MainActivity extends BuddyActivity {
 
     private void handleFoodOfferFR(String foodType) {
         sayText("Merci! J'aimerais beaucoup " + foodType + ".", "it-IT-IsabellaMultilingualNeural");
+        setMoodTemporarily(FacialExpression.HAPPY);
         delayedResponse(() -> playSound(R.raw.eating_sound, this::talkAboutCulturalFoodsFR));
     }
 
     private void handleDrinkOfferIT(String drinkType) {
         sayText("Grazie! Mi piacerebbe molto " + drinkType + ".", "it-IT-IsabellaMultilingualNeural");
+        setMoodTemporarily(FacialExpression.HAPPY);
         delayedResponse(() -> playSound(R.raw.drinking_sound, () -> {
             showDrinkOnScreen(drinkType);
             suggestCulturalDrinksIT();
@@ -448,6 +463,7 @@ public class MainActivity extends BuddyActivity {
 
     private void handleFoodOfferIT(String foodType) {
         sayText("Grazie! Mi piacerebbe molto " + foodType + ".", "it-IT-IsabellaMultilingualNeural");
+        setMoodTemporarily(FacialExpression.HAPPY);
         delayedResponse(() -> playSound(R.raw.eating_sound, this::talkAboutCulturalFoodsIT));
     }
 
@@ -466,23 +482,27 @@ public class MainActivity extends BuddyActivity {
     private void suggestCulturalDrinksEN() {
         String suggestion = "Did you know? In many cultures, tea is a popular drink. Here's what tea looks like! You should try to prepare it some time.";
         sayText(suggestion, "en-US-JennyNeural");
+        setMoodTemporarily(FacialExpression.HAPPY);
         showDrinkOnScreen("tea");
     }
 
     private void talkAboutCulturalFoodsEN() {
         String foodTalk = "On my planet, we enjoy Glorp, a glowing beverage that bubbles. It's quite refreshing!";
         sayText(foodTalk, "en-US-JennyNeural");
+        setMoodTemporarily(FacialExpression.HAPPY);
     }
 
     private void suggestCulturalDrinksFR() {
         String suggestion = "Saviez-vous? Dans de nombreuses cultures, le thé est une boisson populaire. Voici à quoi ressemble le thé! Tu devrais essayer de le préparer un de ces jours.";
         sayText(suggestion, "it-IT-IsabellaMultilingualNeural");
+        setMoodTemporarily(FacialExpression.HAPPY);
         showDrinkOnScreen("tea");
     }
 
     private void talkAboutCulturalFoodsFR() {
         String foodTalk = "Sur ma planète, nous apprécions le Glorp, une boisson lumineuse qui pétille. C'est très rafraîchissant!";
         sayText(foodTalk, "it-IT-IsabellaMultilingualNeural");
+        setMoodTemporarily(FacialExpression.HAPPY);
     }
 
     private void suggestCulturalDrinksIT() {
@@ -631,6 +651,13 @@ public class MainActivity extends BuddyActivity {
                 Toast.makeText(this, "Permissions are required for this app to function", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    private void setMoodTemporarily(FacialExpression expression) {
+        BuddySDK.UI.setMood(expression);
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            BuddySDK.UI.setMood(FacialExpression.NEUTRAL); // Change NEUTRAL to your default mood if different
+        }, 3000);
     }
 
     private void showMainButtons() {
